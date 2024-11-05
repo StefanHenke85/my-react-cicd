@@ -1,0 +1,30 @@
+# .gitlab-ci.yml
+
+stages:
+  - build
+  - deploy
+
+# Job 1: Build the React App
+build-job:
+  stage: build
+  image: node:14
+  script:
+    - npm install
+    - npm run build
+  artifacts:
+    paths:
+      - build/   # Speichert den Build-Output als Artefakt
+  tags:
+    - shared    # Dieser Job läuft auf einem Shared Runner
+
+# Job 2: Deploy to S3 using EC2 Runner
+deploy-job:
+  stage: deploy
+  image: amazonlinux
+  script:
+    - yum install -y aws-cli
+    - aws s3 sync build/ s3://my-react-cicd-deployment --delete   # Ersetze YOUR_BUCKET_NAME mit deinem S3-Bucket
+  dependencies:
+    - build-job  # Nutzt das Artefakt aus dem build-job
+  tags:
+    - ec2        # Dieser Job läuft auf dem EC2-Runner
